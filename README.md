@@ -5,7 +5,7 @@ Video: https://youtu.be/XUDsCbMS07Y
 Place all files into(rcas.hlsl,fsr1.hlsl,ffx_a.h,ffx_fsr1.h):
 C:\Program Files\Google\Chrome\Application\%VERSION%
 (e.g. 144.0.7559.133) u can also if u have a dxil.dll inside the chrome folder replace it with our dll(the dll should also be named dxil.dll)
-to make it work automatilcy without injectin
+to make it work automatically without injectin
 
 Then inject the DLL into the Chrome process with the window title "Chrome_WidgetWin_0".
 
