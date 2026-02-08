@@ -1,3 +1,6 @@
+
+#define WIN32_LEAN_AND_MEAN
+
 #include <Windows.h>
 #include <d3d11.h>
 #include <dxgi.h>
@@ -6,10 +9,14 @@
 #include <vector>
 #include <cassert>
 #include <string>
+#include "hde64.h"
 
 #pragma comment(lib,"d3d11.lib")
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3dcompiler.lib")
+
+
+#include "Zydis.h"
 
 using namespace DirectX;
 
@@ -101,7 +108,7 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
     if (GetAsyncKeyState(VK_F10) & 1)
         enable = !enable;
 
-    if(enable)
+    if (enable)
         return oVideoProcessorBlt(pVideoContext, pVideoProcessor, pView, OutputFrame, StreamCount, pStreams);
 
     ID3D11Device* pDevice = nullptr;
@@ -141,7 +148,7 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
         pInputTex->GetDesc(&inDesc);
         pOutputTex->GetDesc(&outDesc);
 
-       // if (inDesc.Width < outDesc.Width || inDesc.Height < outDesc.Height)
+        // if (inDesc.Width < outDesc.Width || inDesc.Height < outDesc.Height)
         {
             bool needsReinit = (!pCS ||
                 lastInputWidth != inDesc.Width ||
@@ -430,6 +437,24 @@ cleanup:
     return oVideoProcessorBlt(pVideoContext, pVideoProcessor, pView, OutputFrame, StreamCount, pStreams);
 }
 
+SIZE_T GetHookSize(void* target, SIZE_T minSize = 14)
+{
+    hde64s hs;
+    SIZE_T totalSize = 0;
+    BYTE* code = (BYTE*)target;
+
+    while (totalSize < minSize)
+    {
+        unsigned int len = hde64_disasm(code + totalSize, &hs);
+        if (hs.flags & F_ERROR)
+            return minSize;
+
+        totalSize += len;
+    }
+
+    return totalSize;
+}
+
 DWORD WINAPI InstallHook(LPVOID)
 {
     if (!GetModuleHandleA("d3d11"))
@@ -502,7 +527,7 @@ DWORD WINAPI InstallHook(LPVOID)
     g_VPBltHook.target = vTable[53];
     g_VPBltHook.hook = (void*)hkVideoProcessorBlt;
 
-    if (CreateDetour(g_VPBltHook, 18))
+    if (CreateDetour(g_VPBltHook, GetHookSize(g_VPBltHook.target)))
         oVideoProcessorBlt = (VideoProcessorBlt_t)g_VPBltHook.trampoline;
 
     pVideoContext->Release();
