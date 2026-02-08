@@ -101,7 +101,7 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
     if (GetAsyncKeyState(VK_F10) & 1)
         enable = !enable;
 
-    if(!enable)
+    if(enable)
         return oVideoProcessorBlt(pVideoContext, pVideoProcessor, pView, OutputFrame, StreamCount, pStreams);
 
     ID3D11Device* pDevice = nullptr;
