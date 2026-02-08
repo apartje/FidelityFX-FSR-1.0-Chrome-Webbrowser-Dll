@@ -2,7 +2,7 @@ FidelityFX Super Resolution 1.0 (FSR) upscaling and sharpening for Chrome/web br
 
 Video: https://youtu.be/XUDsCbMS07Y
 
-Place all files into:
+Place all files into(rcas.hlsl,fsr1.hlsl,ffx_a.h,ffx_fsr1.h):
 C:\Program Files\Google\Chrome\Application\%VERSION%
 (e.g. 144.0.7559.133)
 
