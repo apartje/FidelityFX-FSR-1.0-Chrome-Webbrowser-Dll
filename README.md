@@ -9,3 +9,5 @@ C:\Program Files\Google\Chrome\Application\%VERSION%
 Then inject the DLL into the Chrome process with the window title "Chrome_WidgetWin_0".
 
 If the injection is successful, a green 20×20 pixel box will appear on every video.
+
+Download for the FSR 1.0 Shaders: https://github.com/GPUOpen-Effects/FidelityFX-FSR/tree/master/ffx-fsr
