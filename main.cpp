@@ -39,25 +39,40 @@ struct DetourHook
 
 bool CreateDetour(DetourHook& h, SIZE_T HOOK_SIZE = 14)
 {
-    memcpy(h.original, h.target, HOOK_SIZE);
-    h.trampoline = VirtualAlloc(nullptr, HOOK_SIZE + 50, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (!h.trampoline) return false;
-    memcpy(h.trampoline, h.original, HOOK_SIZE);
+    SIZE_T actualSize = HOOK_SIZE;
 
-    BYTE* tramp = (BYTE*)h.trampoline + HOOK_SIZE;
-    tramp[0] = 0x48; tramp[1] = 0xB8;
-    *(void**)(tramp + 2) = (BYTE*)h.target + HOOK_SIZE;
-    tramp[10] = 0xFF; tramp[11] = 0xE0;
+    memcpy(h.original, h.target, actualSize);
+
+    h.trampoline = VirtualAlloc(nullptr, 1024, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (!h.trampoline) return false;
+
+    BYTE* tramp = (BYTE*)h.trampoline;
+
+    memcpy(tramp, h.original, actualSize);
+
+    BYTE* returnAddr = (BYTE*)h.target + actualSize;
+
+    tramp += actualSize;
+    tramp[0] = 0xFF;  // jmp [rip+0]
+    tramp[1] = 0x25;
+    *(DWORD*)(tramp + 2) = 0;
+    *(void**)(tramp + 6) = returnAddr;
 
     DWORD old;
-    VirtualProtect(h.target, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &old);
-    BYTE patch[10]{};
-    patch[0] = 0x48; patch[1] = 0xB8;
-    *(void**)(patch + 2) = h.hook;
-    patch[10] = 0xFF; patch[11] = 0xE0;
-    memcpy(h.target, patch, HOOK_SIZE);
-    VirtualProtect(h.target, HOOK_SIZE, old, &old);
-    FlushInstructionCache(GetCurrentProcess(), h.target, HOOK_SIZE);
+    VirtualProtect(h.target, actualSize, PAGE_EXECUTE_READWRITE, &old);
+
+    BYTE* target = (BYTE*)h.target;
+    target[0] = 0xFF;  // jmp [rip+0]
+    target[1] = 0x25;
+    *(DWORD*)(target + 2) = 0;
+    *(void**)(target + 6) = h.hook;
+
+    for (SIZE_T i = 14; i < actualSize; i++)
+        target[i] = 0x90;
+
+    VirtualProtect(h.target, actualSize, old, &old);
+    FlushInstructionCache(GetCurrentProcess(), h.target, actualSize);
+
     return true;
 }
 
@@ -102,8 +117,7 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
     UINT StreamCount,
     const D3D11_VIDEO_PROCESSOR_STREAM* pStreams)
 {
-    if (!pStreams || StreamCount == 0)
-        return oVideoProcessorBlt(pVideoContext, pVideoProcessor, pView, OutputFrame, StreamCount, pStreams);
+    // if (!pStreams || StreamCount == 0)
 
     if (GetAsyncKeyState(VK_F10) & 1)
         enable = !enable;
