@@ -69,6 +69,24 @@ VideoProcessorBlt_t oVideoProcessorBlt = nullptr;
 #include "ffx_a.h"
 #include "ffx_fsr1.h"
 
+static bool enable = false;
+static ID3D11Texture2D* pFSRInputTex = nullptr;
+static ID3D11Texture2D* pFSROutputTex = nullptr;
+static ID3D11Texture2D* pRCASOutputTex = nullptr;
+static ID3D11ShaderResourceView* pSRV = nullptr;
+static ID3D11ShaderResourceView* pRCASSRV = nullptr;
+static ID3D11UnorderedAccessView* pUAV = nullptr;
+static ID3D11UnorderedAccessView* pRCASUAV = nullptr;
+static ID3D11ComputeShader* pCS = nullptr;
+static ID3D11ComputeShader* pRCASCS = nullptr;
+static ID3D11Buffer* pCB = nullptr;
+static ID3D11Buffer* pRCASCB = nullptr;
+static ID3D11SamplerState* pSampler = nullptr;
+static UINT lastInputWidth = 0;
+static UINT lastInputHeight = 0;
+static UINT lastOutputWidth = 0;
+static UINT lastOutputHeight = 0;
+
 HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
     ID3D11VideoContext* pVideoContext,
     ID3D11VideoProcessor* pVideoProcessor,
@@ -80,22 +98,11 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
     if (!pStreams || StreamCount == 0)
         return oVideoProcessorBlt(pVideoContext, pVideoProcessor, pView, OutputFrame, StreamCount, pStreams);
 
-    static ID3D11Texture2D* pFSRInputTex = nullptr;
-    static ID3D11Texture2D* pFSROutputTex = nullptr;
-    static ID3D11Texture2D* pRCASOutputTex = nullptr;
-    static ID3D11ShaderResourceView* pSRV = nullptr;
-    static ID3D11ShaderResourceView* pRCASSRV = nullptr;
-    static ID3D11UnorderedAccessView* pUAV = nullptr;
-    static ID3D11UnorderedAccessView* pRCASUAV = nullptr;
-    static ID3D11ComputeShader* pCS = nullptr;
-    static ID3D11ComputeShader* pRCASCS = nullptr;
-    static ID3D11Buffer* pCB = nullptr;
-    static ID3D11Buffer* pRCASCB = nullptr;
-    static ID3D11SamplerState* pSampler = nullptr;
-    static UINT lastInputWidth = 0;
-    static UINT lastInputHeight = 0;
-    static UINT lastOutputWidth = 0;
-    static UINT lastOutputHeight = 0;
+    if (GetAsyncKeyState(VK_F10) & 1)
+        enable = !enable;
+
+    if(!enable)
+        return oVideoProcessorBlt(pVideoContext, pVideoProcessor, pView, OutputFrame, StreamCount, pStreams);
 
     ID3D11Device* pDevice = nullptr;
     pVideoContext->GetDevice(&pDevice);
@@ -134,7 +141,7 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
         pInputTex->GetDesc(&inDesc);
         pOutputTex->GetDesc(&outDesc);
 
-        if (inDesc.Width < outDesc.Width || inDesc.Height < outDesc.Height)
+       // if (inDesc.Width < outDesc.Width || inDesc.Height < outDesc.Height)
         {
             bool needsReinit = (!pCS ||
                 lastInputWidth != inDesc.Width ||
@@ -144,20 +151,23 @@ HRESULT STDMETHODCALLTYPE hkVideoProcessorBlt(
 
             if (needsReinit)
             {
-                if (pFSRInputTex) {
-                    pFSRInputTex->Release(); pFSRInputTex = nullptr; 
-                    pFSROutputTex->Release(); pFSROutputTex = nullptr;
-                    pRCASOutputTex->Release(); pRCASOutputTex = nullptr;
-                    pSRV->Release(); pSRV = nullptr;
-                    pRCASSRV->Release(); pRCASSRV = nullptr;
-                    pUAV->Release(); pUAV = nullptr;
-                    pRCASUAV->Release(); pRCASUAV = nullptr;
-                    pCS->Release(); pCS = nullptr;
-                    pRCASCS->Release(); pRCASCS = nullptr;
-                    pCB->Release(); pCB = nullptr;
-                    pRCASCB->Release(); pRCASCB = nullptr;
-                    pSampler->Release(); pSampler = nullptr;
-                }             
+                if (pFSRInputTex) { pFSRInputTex->Release();   pFSRInputTex = nullptr; }
+                if (pFSROutputTex) { pFSROutputTex->Release();  pFSROutputTex = nullptr; }
+                if (pRCASOutputTex) { pRCASOutputTex->Release(); pRCASOutputTex = nullptr; }
+
+                if (pSRV) { pSRV->Release();       pSRV = nullptr; }
+                if (pRCASSRV) { pRCASSRV->Release();   pRCASSRV = nullptr; }
+
+                if (pUAV) { pUAV->Release();       pUAV = nullptr; }
+                if (pRCASUAV) { pRCASUAV->Release();   pRCASUAV = nullptr; }
+
+                if (pCS) { pCS->Release();        pCS = nullptr; }
+                if (pRCASCS) { pRCASCS->Release();    pRCASCS = nullptr; }
+
+                if (pCB) { pCB->Release();        pCB = nullptr; }
+                if (pRCASCB) { pRCASCB->Release();    pRCASCB = nullptr; }
+
+                if (pSampler) { pSampler->Release();   pSampler = nullptr; }
 
                 D3D11_TEXTURE2D_DESC inputTexDesc{};
                 inputTexDesc.Width = inDesc.Width;
@@ -427,6 +437,23 @@ DWORD WINAPI InstallHook(LPVOID)
         return 0;
     if (!GetModuleHandleA("mf"))
         return 0;
+
+    pFSRInputTex = nullptr;
+    pFSROutputTex = nullptr;
+    pRCASOutputTex = nullptr;
+    pSRV = nullptr;
+    pRCASSRV = nullptr;
+    pUAV = nullptr;
+    pRCASUAV = nullptr;
+    pCS = nullptr;
+    pRCASCS = nullptr;
+    pCB = nullptr;
+    pRCASCB = nullptr;
+    pSampler = nullptr;
+    lastInputWidth = 0;
+    lastInputHeight = 0;
+    lastOutputWidth = 0;
+    lastOutputHeight = 0;
 
     ID3D11Device* pDevice = nullptr;
     ID3D11DeviceContext* pContext = nullptr;
