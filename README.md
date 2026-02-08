@@ -71,3 +71,11 @@ FSR 1.0 Shader Source
 
 Official AMD FidelityFX FSR 1.0 shaders:
 https://github.com/GPUOpen-Effects/FidelityFX-FSR/tree/master/ffx-fsr
+
+## Comparison
+
+### Without FSR
+![Without FSR](nonfsr.PNG)
+
+### With FSR
+![With FSR](fsr.PNG)
