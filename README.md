@@ -81,7 +81,7 @@ If the injection is successful, a green 20×20 pixel square will appear on every
 
 ## Video Demonstration
 
-https://youtu.be/XUDsCbMS07Y
+https://www.youtube.com/watch?v=7PVtNNtjnyE
 
 ---
 
