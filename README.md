@@ -7,6 +7,10 @@ The goal is sharper and cleaner video playback with minimal performance overhead
 
 ---
 
+#known bugs
+not working on: Opera/firefox
+hotkey toggle doesnt work sometimes
+
 ## Features
 
 - FSR 1.0 upscaling  
